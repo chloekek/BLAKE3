@@ -116,6 +116,7 @@ mod join;
 
 use arrayref::{array_mut_ref, array_ref};
 use arrayvec::{ArrayString, ArrayVec};
+use cfg_if::cfg_if;
 use core::cmp;
 use core::fmt;
 use platform::{Platform, MAX_SIMD_DEGREE, MAX_SIMD_DEGREE_OR_2};
@@ -278,27 +279,45 @@ impl core::str::FromStr for Hash {
     }
 }
 
-/// This implementation is constant-time.
+#[cfg_attr(feature = "constant_time_eq", doc = "This implementation is constant-time.")]
 impl PartialEq for Hash {
     #[inline]
     fn eq(&self, other: &Hash) -> bool {
-        constant_time_eq::constant_time_eq_32(&self.0, &other.0)
+        cfg_if! {
+            if #[cfg(feature = "constant_time_eq")] {
+                constant_time_eq::constant_time_eq_32(&self.0, &other.0)
+            } else {
+                self.0 == other.0
+            }
+        }
     }
 }
 
-/// This implementation is constant-time.
+#[cfg_attr(feature = "constant_time_eq", doc = "This implementation is constant-time.")]
 impl PartialEq<[u8; OUT_LEN]> for Hash {
     #[inline]
     fn eq(&self, other: &[u8; OUT_LEN]) -> bool {
-        constant_time_eq::constant_time_eq_32(&self.0, other)
+        cfg_if! {
+            if #[cfg(feature = "constant_time_eq")] {
+                constant_time_eq::constant_time_eq_32(&self.0, other)
+            } else {
+                &self.0 == other
+            }
+        }
     }
 }
 
-/// This implementation is constant-time if the target is 32 bytes long.
+#[cfg_attr(feature = "constant_time_eq", doc = "This implementation is constant-time if the target is 32 bytes long.")]
 impl PartialEq<[u8]> for Hash {
     #[inline]
     fn eq(&self, other: &[u8]) -> bool {
-        constant_time_eq::constant_time_eq(&self.0, other)
+        cfg_if! {
+            if #[cfg(feature = "constant_time_eq")] {
+                constant_time_eq::constant_time_eq(&self.0, other)
+            } else {
+                self.0 == other
+            }
+        }
     }
 }
 
